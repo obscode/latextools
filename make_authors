@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+
+'''
+Author:  Chris Burns (cburns@carnegiescience.edu)
+
+ script to gather author info (in author data file) and do the following:
+   1) symbolically associate each author with her institution
+   2) keep track of the order of the institutions as they appear
+      in the author list
+   3) make sure institutions are not duplicated
+   4) output the author list in LaTeX format for AASTEX or AASTEX6
+
+   The author data file is split into two parts: author data and
+   affiliation data. Author data is first and has one author per line:
+   author name, affil1, affil2, ..., affiln
+   where author name is the full TeX'd author name and affil1, etc are
+   unique keys for the affiliations in the second part of the file,
+   where you list one affiliation per line:
+   affil1 The full affiliation string
+   The key is the first item, followed by a space, then the full
+   affiliation.  Example author data file:
+
+   Chris Burns, OCIW
+   Mark Phillips, LCO, OCIW
+   OCIW Carnegie Observatories, Pasadena, CA, USA
+   LCO Las Campanas Observatory, La Serena, Chile
+'''
+
+import os,string,re,sys
+import argparse
+
+parser = argparse.ArgumentParser(
+   description="Generate an author list for AASTEX. Outputs to STDOUT.")
+parser.add_argument('datafile', help="The author data file")
+parser.add_argument('-aastex6', help="Optionally output in aastex 6.1 format",
+      action="store_true")
+args = parser.parse_args()
+f = open(args.datafile)
+lines = f.readlines()
+
+lines = map(string.strip, lines)
+bid = lines.index('')
+authors = lines[0:bid]
+inst = lines[bid+1:]
+
+author_list = []
+inst_list = []
+
+author_data = {}
+for author in authors:
+   if author[0] == "#":  continue
+   author = string.split(author,',')
+   author = map(string.strip, author)
+   author_list.append(author[0])
+   author_data[author[0]] = author[1:]
+   for item in author[1:]:
+      if item not in inst_list:  inst_list.append(item)
+
+inst_data = {}
+for line in inst:
+   l = string.split(line)
+   l = map(string.strip, l)
+   inst_data[l[0]] = string.join(l[1:], ' ')
+
+if args.aastex6:
+   for author in author_list:
+      sys.stdout.write('\\author{' + author + '}\n')
+      for inst in author_data[author]:
+         sys.stdout.write('\\affiliation{' + inst_data[inst] + '}\n')
+   sys.exit(0)
+
+sys.stdout.write('\\author{\n')
+for author in author_list[:-2]:
+   # Only to to next-to-last 'cause we use \\and 
+   ids = [str(inst_list.index(author_data[author][i])+1) for i in \
+         range(len(author_data[author]))]
+   sys.stdout.write(author + '\\altaffilmark{' + string.join(ids, ',') + '},\n')
+author = author_list[-2]
+ids = [str(inst_list.index(author_data[author][i])+1) for i in \
+   range(len(author_data[author]))]
+sys.stdout.write(author+'\\altaffilmark{' + string.join(ids, ',') + '} and \n')
+author = author_list[-1]
+ids = [str(inst_list.index(author_data[author][i])+1) for i in \
+   range(len(author_data[author]))]
+sys.stdout.write(author + '\\altaffilmark{' + string.join(ids, ',') + '}\n')
+sys.stdout.write('}\n')
+
+for i in range(len(inst_list)):
+   sys.stdout.write('\\altaffiltext{' + str(i+1) + '}{' + \
+         inst_data[inst_list[i]] + '}\n')
