@@ -1,11 +1,11 @@
 # latextools
-Some python-based latex tools useful to authors of scientific journals
+Some python-based latex tools useful to authors of scientific journal articles.
 
 # Contents
 - **make_authors:**  Given a file with author names and affiliations (with many-to-one association),
                  contruct a .tex file with the appropriate authors section (either in AASTeX 5 or
                  AASTeX 6 format). Keeps track of order of affiliations, multiple authors at the
-                 same affiliation, etc.
+                 same affiliation, etc. See `author_sample.dat` for an example
 - **fix_authors:**  Given a .bbl file generated from BibTeX, go throug the author list and for those
                 entries where the number of authors is greater than a certain number (default 5),
                 truncate the author list to authors one to three, followed by "et al."
